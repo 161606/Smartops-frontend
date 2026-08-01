@@ -3,6 +3,9 @@ import React, { useState, useEffect } from 'react';
 function App() {
   const [stats, setStats] = useState(null);
   const [builds, setBuilds] = useState([]);
+  const [code, setCode] = useState('');
+  const [review, setReview] = useState('');
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetch('http://localhost:8000/stats')
@@ -13,6 +16,19 @@ function App() {
       .then(res => res.json())
       .then(data => setBuilds(data));
   }, []);
+
+  const reviewCode = async () => {
+    setLoading(true);
+    setReview('');
+    const res = await fetch('http://localhost:8000/review', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code })
+    });
+    const data = await res.json();
+    setReview(data.review);
+    setLoading(false);
+  };
 
   return (
     <div style={{backgroundColor:'#0f172a', minHeight:'100vh', padding:'2rem', fontFamily:'Arial'}}>
@@ -37,7 +53,7 @@ function App() {
       )}
 
       <h2 style={{color:'#fff', marginBottom:'1rem'}}>Recent Builds</h2>
-      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem'}}>
+      <div style={{display:'flex', flexDirection:'column', gap:'0.75rem', marginBottom:'2rem'}}>
         {builds.map(build => (
           <div key={build.id} style={{background:'#1e293b', borderRadius:'12px', padding:'1rem 1.5rem', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
             <div>
@@ -51,6 +67,30 @@ function App() {
           </div>
         ))}
       </div>
+
+      <h2 style={{color:'#fff', marginBottom:'1rem'}}>🤖 AI Code Review</h2>
+      <div style={{background:'#1e293b', borderRadius:'12px', padding:'1.5rem', marginBottom:'1rem'}}>
+        <textarea
+          value={code}
+          onChange={e => setCode(e.target.value)}
+          placeholder="Paste your code here and click Review..."
+          style={{width:'100%', height:'150px', background:'#0f172a', color:'#fff', border:'1px solid #334155', borderRadius:'8px', padding:'1rem', fontSize:'14px', fontFamily:'monospace', resize:'vertical'}}
+        />
+        <button
+          onClick={reviewCode}
+          disabled={loading || !code}
+          style={{marginTop:'1rem', background:'#38bdf8', color:'#0f172a', border:'none', borderRadius:'8px', padding:'0.75rem 2rem', fontSize:'15px', fontWeight:'600', cursor:'pointer'}}
+        >
+          {loading ? 'Reviewing...' : '🤖 Review Code'}
+        </button>
+      </div>
+
+      {review && (
+        <div style={{background:'#1e293b', borderRadius:'12px', padding:'1.5rem'}}>
+          <h3 style={{color:'#38bdf8', marginTop:0}}>AI Review Result</h3>
+          <p style={{color:'#e2e8f0', lineHeight:'1.7', whiteSpace:'pre-wrap'}}>{review}</p>
+        </div>
+      )}
     </div>
   );
 }
